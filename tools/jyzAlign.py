@@ -15,9 +15,12 @@ def align(num,filename):
     src = 'D:/jyzdata/jyzbig/'
     desrc = 'D:/jyzdata/jyzAlign/'
     with open(src + filename, 'r') as f:
+        #读取json文件
         jsonfile = json.loads(f.read())
+        #读取json文件中对应的图片信息
         img = cv2.imread(src + jsonfile['imagePath'])
         for idx in range(len(jsonfile['shapes'])):
+            #根据图片中的关键点坐标计算最小的包络矩形
             cnt = np.asarray(jsonfile['shapes'][idx]['points'])
             cnt = cnt.astype(int)
             rect = cv2.minAreaRect(cnt)
@@ -28,6 +31,8 @@ def align(num,filename):
             # cv2.circle(img, (box[1][0], box[1][1]), 50, (0, 255, 0), 10)  # 修改最后一个参数
             # cv2.circle(img, (box[2][0], box[2][1]), 50, (0, 0, 255), 10)  # 修改最后一个参数
             # cv2.circle(img, (box[3][0], box[3][1]), 50, (0, 0, 0), 10)  # 修改最后一个参数
+            #这里主要针对不同的矩形倾斜角度做分类，使得几乎所有的情况都能旋转至水平
+            #rect[1][0]是矩形所对应的宽，rect[1][1]对应的是矩形的长
             if (rect[1][0]<rect[1][1]):
                 RotateMatrix = cv2.getRotationMatrix2D(center=(box[0][0], box[0][1]), angle=(90 + rect[2]), scale=1)
                 if(abs(rect[2])>50):
@@ -41,7 +46,9 @@ def align(num,filename):
                 y0 = y1 - rect[1][0]
                 x0 = box[0][0]+addition
                 x1 = x0 - rect[1][1]
+                #裁剪旋转后的图像
                 cropImg = RotImg[int(y0):int(y1), int(x1):int(x0)]
+                #将裁剪后的图像保存至本地
                 cv2.imwrite(desrc + str(num) +str(idx) + '_' + jsonfile['shapes'][idx]['label'] + '.jpg', cropImg)
             else:
                 RotateMatrix = cv2.getRotationMatrix2D(center=(box[0][0], box[0][1]), angle=rect[2], scale=1)
